@@ -329,6 +329,25 @@ const Login = () => {
                     </>
                   )}
                 </button>
+
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-border"></div>
+                  <span className="flex-shrink mx-4 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Or</span>
+                  <div className="flex-grow border-t border-border"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem("use_mock_data", "true");
+                    toast.success("Welcome to Demo Mode!");
+                    window.location.reload();
+                  }}
+                  className="w-full h-14 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-2xl font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-border"
+                >
+                  <span>Explore App in Demo Mode</span>
+                  <ArrowRight size={20} />
+                </button>
               </div>
             </div>
 

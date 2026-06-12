@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, UserProfile } from "@/services/usersService";
+import { isMockMode, getMockUserProfile } from "@/services/mockDb";
 
 interface AuthContextType {
   user: User | null;
@@ -27,6 +28,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isMockMode()) {
+      setUser({
+        uid: "demo-uid",
+        displayName: "Demo Manager",
+        email: "demo@factoryflow.com",
+        phoneNumber: "+919876543210",
+      } as any);
+      setUserProfile(getMockUserProfile("demo-uid"));
+      setLoading(false);
+      
+      // Setup a window listener to handle live changes in mock mode
+      const handleStorageChange = () => {
+        if (!isMockMode()) {
+          setUser(null);
+          setUserProfile(null);
+        }
+      };
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -45,9 +67,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    if (isMockMode()) {
+      localStorage.removeItem("use_mock_data");
+    }
     await firebaseSignOut(auth);
     setUser(null);
     setUserProfile(null);
+    window.location.reload(); // Reload to reset all states and services cleanly
   };
 
   return (

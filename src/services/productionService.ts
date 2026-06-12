@@ -13,6 +13,7 @@ import {
   getDocs,
   writeBatch
 } from "firebase/firestore";
+import { isMockMode, getMockData, saveMockData, subscribeMock } from "@/services/mockDb";
 
 export interface Production {
   id: string;
@@ -39,6 +40,9 @@ const productionRef = collection(db, "Production");
 export const subscribeProduction = (
   callback: (items: Production[]) => void
 ): (() => void) => {
+  if (isMockMode()) {
+    return subscribeMock("production", callback);
+  }
   const q = query(
     productionRef, 
     where("status", "in", ["pending", "in-progress", "completed", "shipped"])
@@ -51,6 +55,7 @@ export const subscribeProduction = (
     callback(items);
   }, (error) => {
     console.error("Production sync error:", error);
+    callback([]);
   });
 };
 
@@ -66,6 +71,14 @@ export const addProductionStage = async (data: {
   consumption_per_unit?: number | null;
   quantity?: number | null;
 }): Promise<string> => {
+  if (isMockMode()) {
+    const items = getMockData("production");
+    const id = `p-${Date.now().toString(36)}`;
+    const newItem = { id, ...data, history: [] };
+    items.push(newItem);
+    saveMockData("production", items);
+    return id;
+  }
   const docRef = await addDoc(productionRef, data);
   return docRef.id;
 };
@@ -75,6 +88,26 @@ export const updateProductionStatus = async (
   status: "pending" | "in-progress" | "completed" | "shipped",
   completedBy?: { worker: string, stage: string }
 ): Promise<void> => {
+  if (isMockMode()) {
+    const items = getMockData("production");
+    const item = items.find((i: any) => i.id === docId);
+    if (item) {
+      item.status = status;
+      if (status === "shipped") {
+        item.shipped_at = { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 };
+      }
+      if (completedBy) {
+        if (!item.history) item.history = [];
+        item.history.push({
+          stage: completedBy.stage,
+          worker: completedBy.worker,
+          completed_at: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }
+        });
+      }
+      saveMockData("production", items);
+    }
+    return;
+  }
   const { Timestamp, arrayUnion } = await import("firebase/firestore");
   const updates: any = { status };
   
@@ -98,6 +131,23 @@ export const updateProductionStage = async (
   newStage: string,
   completedBy?: { worker: string, stage: string }
 ): Promise<void> => {
+  if (isMockMode()) {
+    const items = getMockData("production");
+    const item = items.find((i: any) => i.id === docId);
+    if (item) {
+      item.stage = newStage;
+      if (completedBy) {
+        if (!item.history) item.history = [];
+        item.history.push({
+          stage: completedBy.stage,
+          worker: completedBy.worker,
+          completed_at: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }
+        });
+      }
+      saveMockData("production", items);
+    }
+    return;
+  }
   const { Timestamp, arrayUnion } = await import("firebase/firestore");
   const updates: any = { stage: newStage };
 
@@ -117,8 +167,18 @@ export const updateProductionStatusByOrderId = async (
   orderReadableId: string,
   status: "pending" | "in-progress" | "completed" | "shipped"
 ): Promise<void> => {
-  // We try to find by order_doc_id, OR the human readable order_id, 
-  // OR the case where the order_id field accidentally contains the Firebase Doc ID
+  if (isMockMode()) {
+    const items = getMockData("production");
+    items.forEach((item: any) => {
+      if (item.order_doc_id === orderDocId || item.order_id === orderReadableId || item.order_id === orderDocId) {
+        item.status = status;
+        item.order_doc_id = orderDocId;
+        item.order_id = orderReadableId;
+      }
+    });
+    saveMockData("production", items);
+    return;
+  }
   const q1 = query(productionRef, where("order_doc_id", "==", orderDocId));
   const q2 = query(productionRef, where("order_id", "==", orderReadableId));
   const q3 = query(productionRef, where("order_id", "==", orderDocId));
@@ -130,11 +190,10 @@ export const updateProductionStatusByOrderId = async (
 
   [...snap1.docs, ...snap2.docs, ...snap3.docs].forEach((d) => {
     if (!seenIds.has(d.id)) {
-      // Patch the data to be correct for future syncs
       batch.update(d.ref, { 
         status, 
         order_doc_id: orderDocId,
-        order_id: orderReadableId // Ensure human readable ID is set correctly
+        order_id: orderReadableId
       });
       seenIds.add(d.id);
     }
@@ -143,11 +202,19 @@ export const updateProductionStatusByOrderId = async (
   await batch.commit();
 };
 
-
 export const updateProductionWorker = async (
   docId: string,
   assigned_worker: string
 ): Promise<void> => {
+  if (isMockMode()) {
+    const items = getMockData("production");
+    const item = items.find((i: any) => i.id === docId);
+    if (item) {
+      item.assigned_worker = assigned_worker;
+      saveMockData("production", items);
+    }
+    return;
+  }
   await updateDoc(doc(db, "Production", docId), { assigned_worker });
 };
 
@@ -155,6 +222,16 @@ export const updateProductionWorkerByOrderId = async (
   orderReadableId: string,
   assigned_worker: string
 ): Promise<void> => {
+  if (isMockMode()) {
+    const items = getMockData("production");
+    items.forEach((item: any) => {
+      if (item.order_id === orderReadableId) {
+        item.assigned_worker = assigned_worker;
+      }
+    });
+    saveMockData("production", items);
+    return;
+  }
   const q = query(productionRef, where("order_id", "==", orderReadableId));
   const snapshot = await getDocs(q);
   const batch = writeBatch(db);
