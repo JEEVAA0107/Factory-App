@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import BottomNav from "./BottomNav";
-import { BarChart3, Settings as SettingsIcon, Workflow } from "lucide-react";
+import { BarChart3, Settings as SettingsIcon, Factory } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
@@ -10,7 +10,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
       {/* Top Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Workflow size={18} className="text-primary" />
+          <Factory size={18} className="text-primary" />
           <span className="font-bold text-lg text-primary tracking-tighter">FactoryFlow</span>
         </div>
         <div className="flex items-center gap-1">

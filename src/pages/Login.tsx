@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Workflow, Smartphone, User, Shield, ArrowRight, Mail, Phone, Lock, ChevronLeft } from "lucide-react";
+import { Factory, Smartphone, User, Shield, ArrowRight, Mail, Phone, Lock, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -148,7 +148,7 @@ const Login = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background max-w-lg mx-auto">
         <div className="w-20 h-20 rounded-[2rem] bg-primary flex items-center justify-center mb-8 shadow-2xl shadow-primary/30 rotate-6 transform hover:rotate-0 transition-transform duration-500">
-          <Workflow size={40} className="text-white -rotate-6" />
+          <Factory size={40} className="text-white -rotate-6" />
         </div>
 
         <div className="text-center mb-10">
@@ -286,7 +286,7 @@ const Login = () => {
             {/* Minimal Header */}
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
-                <Workflow size={32} className="text-white" />
+                <Factory size={32} className="text-white" />
               </div>
               <h1 className="text-3xl font-black tracking-tight text-foreground">FactoryFlow</h1>
               <p className="text-muted-foreground text-sm font-medium mt-1">Simple Factory Management</p>
